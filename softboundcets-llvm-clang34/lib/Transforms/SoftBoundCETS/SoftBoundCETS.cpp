@@ -3352,6 +3352,9 @@ void SoftBoundCETSPass::addDereferenceChecks(Function* func) {
   if(metadata_prop_only)
     return;
 
+  if (Blacklist->isIn(F))
+    return;
+
   std::vector<Instruction*> CheckWorkList;
   std::map<Value*, bool> ElideSpatialCheck;
   std::map<Value*, bool> ElideTemporalCheck;
@@ -4852,6 +4855,8 @@ bool SoftBoundCETSPass::runOnModule(Module& module) {
   BuilderTy TheBuilder(module.getContext(), TargetFolder(TD));
 
   Builder = &TheBuilder;
+
+  Blacklist.reset(SpecialCaseList::createOrDie(BlacklistFile));
 
   if(disable_spatial_safety){
     spatial_safety = false;

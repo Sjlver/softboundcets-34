@@ -41,26 +41,27 @@
 #ifndef SOFTBOUNDCETSPASS_H
 #define SOFTBOUNDCETSPASS_H
 
-#include "llvm/IR/Intrinsics.h"
+#include "llvm/ADT/DenseMap.h"
+#include "llvm/ADT/FoldingSet.h"
+#include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/StringExtras.h"
+#include "llvm/ADT/StringMap.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/GlobalValue.h"
 #include "llvm/IR/Instructions.h"
+#include "llvm/IR/Intrinsics.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Operator.h"
-#include "llvm/ADT/FoldingSet.h"
-#include "llvm/ADT/StringExtras.h"
-#include "llvm/ADT/StringMap.h"
 #include "llvm/Support/Compiler.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/ErrorHandling.h"
+#include "llvm/Support/GetElementPtrTypeIterator.h"
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/MathExtras.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/Support/GetElementPtrTypeIterator.h"
-#include "llvm/ADT/DenseMap.h"
-#include "llvm/ADT/SmallVector.h"
-#include "llvm/ADT/STLExtras.h"
+#include "llvm/Transforms/Utils/SpecialCaseList.h"
 #include <algorithm>
 #include <cstdarg>
 
@@ -113,6 +114,8 @@ class SoftBoundCETSPass: public ModulePass {
   const DataLayout *TD;
   const TargetLibraryInfo *TLI;
   BuilderTy *Builder;
+  SmallString<64> BlacklistFile;
+  OwningPtr<SpecialCaseList> Blacklist;
   
   bool spatial_safety;
   bool temporal_safety;
@@ -451,7 +454,9 @@ class SoftBoundCETSPass: public ModulePass {
   /*               "SoftBound CETS for memory safety", false, false) */
     
     
- SoftBoundCETSPass(): ModulePass(ID){
+ SoftBoundCETSPass(StringRef BlacklistFile = "")
+      : ModulePass(ID),
+        BlacklistFile(BlacklistFile) {
     spatial_safety= true;
     temporal_safety=true;
 #if 0
