@@ -37,7 +37,9 @@
 // WITH THE SOFTWARE.
 //===---------------------------------------------------------------------===//
 
+#define DEBUG_TYPE "softboundcets"
 #include "llvm/Transforms/SoftBoundCETS/SoftBoundCETSPass.h"
+#include "llvm/ADT/Statistic.h"
 
 
 cl::opt<bool>
@@ -215,6 +217,13 @@ unsafe_byval_opt
 #endif
 
 // #define SOFTBOUNDCETS_CHK_INTRINSIC 1
+
+
+STATISTIC(NumSpatialLoadChecks,   "Number of spatial load checks inserted");
+STATISTIC(NumSpatialStoreChecks,  "Number of spatial store checks inserted");
+STATISTIC(NumTemporalLoadChecks,  "Number of temporal load checks inserted");
+STATISTIC(NumTemporalStoreChecks, "Number of temporal store checks inserted");
+
 
 char SoftBoundCETSPass:: ID = 0;
 
@@ -2880,12 +2889,12 @@ SoftBoundCETSPass::addLoadStoreChecks(Instruction* load_store,
   Value* size_of_type = getSizeOfType(pointer_operand_type);
   args.push_back(size_of_type);
 
-  if(isa<LoadInst>(load_store)){
-            
+  if(isa<LoadInst>(load_store)) {
     CallInst::Create(m_spatial_load_dereference_check, args, "", load_store);
-  }
-  else{    
+    NumSpatialLoadChecks += 1;
+  } else {
     CallInst::Create(m_spatial_store_dereference_check, args, "", load_store);
+    NumSpatialStoreChecks += 1;
   }
 
   return;
@@ -3331,12 +3340,13 @@ SoftBoundCETSPass::addTemporalChecks(Instruction* load_store,
       args.push_back(tmp_bound);
     }
     
-    if(isa<LoadInst>(load_store)){
+    if(isa<LoadInst>(load_store)) {
       CallInst::Create(m_temporal_load_dereference_check, args, "", load_store);
-    }
-    else {
+      NumTemporalLoadChecks += 1;
+    } else {
       CallInst::Create(m_temporal_store_dereference_check, args, "", load_store);
-    }    
+      NumTemporalStoreChecks += 1;
+    }
     return;
 }
 
@@ -3359,7 +3369,6 @@ void SoftBoundCETSPass::addDereferenceChecks(Function* func) {
   std::map<Value*, bool> ElideSpatialCheck;
   std::map<Value*, bool> ElideTemporalCheck;
   
-
 
   // identify all the instructions where we need to insert the spatial checks
   for(inst_iterator i = inst_begin(F), e = inst_end(F); i != e; ++i){
@@ -3494,6 +3503,14 @@ void SoftBoundCETSPass::addDereferenceChecks(Function* func) {
 
     BranchInst::Create(faultBB, Cont, Or2, OldBB);
     
+    if (isa<StoreInst>(Inst)) {
+        NumSpatialStoreChecks += 1;
+        NumTemporalStoreChecks += 1;
+    } else {
+        NumSpatialLoadChecks += 1;
+        NumTemporalLoadChecks += 1;
+    }
+
     continue;
   }
 
