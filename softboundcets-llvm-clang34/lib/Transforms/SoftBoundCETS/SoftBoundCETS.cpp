@@ -4254,7 +4254,6 @@ SoftBoundCETSPass::freeFunctionKeyLock(Function* func, Value* & func_key,
     assert(0 && "inconsistent key lock");
   }
 
-  Function::iterator  bb_begin = func->begin();
   Instruction* next_inst = NULL;
 
   for(Function::iterator b = func->begin(), be = func->end(); b != be ; ++b) {
