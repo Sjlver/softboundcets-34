@@ -4,3 +4,6 @@ build/
 # Runtime library build files
 softboundcets-lib/**/*.a
 softboundcets-lib/**/*.o
+
+# IDE files
+nbproject/
